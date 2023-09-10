@@ -1,0 +1,31 @@
+sudo: required
+dist: bionic
+before_install:
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+  - sudo apt-get update
+  - sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
+  - docker --version
+
+services:
+  - docker
+
+before_script:
+  # https://www.elastic.co/guide/en/elasticsearch/reference/5.0/vm-max-map-count.html
+  - sudo sysctl -w vm.max_map_count=262144
+
+script:
+  - docker swarm init
+  - docker node ls
+  - chmod +x *.sh
+  - ./deployStack.sh
+  - sleep 180
+  - docker run -d --rm --name jenkins -p 8080:8080 jenkinsci/blueocean
+  - sleep 120
+
+after_script:
+  - docker stack services elastic
+  - docker stack ps elastic
+  #List all Elasticsearch Indices. One entry sould be for logstash containing console logs for Jenkins
+  - curl -XGET -u elastic:changeme '127.0.0.1:9200/_cat/indices?v&pretty'
+  - ./removeStack.sh
