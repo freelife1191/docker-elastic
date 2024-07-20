@@ -66,10 +66,11 @@
     - [📗 1. ELK 이미지 빌드 (최초에만 생성 이미 생성되어 있음)](#-1-elk-이미지-빌드-최초에만-생성-이미-생성되어-있음)
       - [► 1. Elasticsearch 이미지 빌드 (최초에만 생성 이미 생성되어 있음)](#-1-elasticsearch-이미지-빌드-최초에만-생성-이미-생성되어-있음)
         - [Elasticsearch (`Dockerfile`)](#elasticsearch-dockerfile)
-        - [Elasticsearch 공통 빌드 스크립트 (Dockerfile)](#elasticsearch-공통-빌드-스크립트-dockerfile)
+        - [Elasticsearch 공통 빌드 스크립트 (`buildCommon.sh`)](#elasticsearch-공통-빌드-스크립트-buildcommonsh)
         - [Elasticsearch 빌드 스크립트 (`buildElastic.sh`)](#elasticsearch-빌드-스크립트-buildelasticsh)
       - [► 2. Kibana 이미지 빌드 (최초에만 생성 이미 생성되어 있음)](#-2-kibana-이미지-빌드-최초에만-생성-이미-생성되어-있음)
         - [Kibana (`Dockerfile`)](#kibana-dockerfile)
+        - [Kibana 공통 빌드 스크립트 (`buildCommon.sh`)](#kibana-공통-빌드-스크립트-buildcommonsh)
         - [Kibana 빌드 스크립트 (`buildKibana.sh`)](#kibana-빌드-스크립트-buildkibanash)
     - [📗 2. ELK Stack 구축](#-2-elk-stack-구축)
       - [► 1. Elastic Stack 배포](#-1-elastic-stack-배포)
@@ -613,7 +614,7 @@ $ docker stack ps --no-trunc swarmpit
 
 [elk/elasticsearch/Dockerfile](elk/elasticsearch/Dockerfile) 스크립트 파일 참고
 
-##### Elasticsearch 공통 빌드 스크립트 (Dockerfile)
+##### Elasticsearch 공통 빌드 스크립트 (`buildCommon.sh`)
 
 [buildCommon.sh](scripts/buildCommon.sh) 스크립트 파일 참고
 
@@ -636,6 +637,9 @@ $ ./buildElastic.sh
 
 [elk/kibana/Dockerfile](elk/kibana/Dockerfile) 스크립트 파일 참고
 
+##### Kibana 공통 빌드 스크립트 (`buildCommon.sh`)
+
+[buildCommon.sh](scripts/buildCommon.sh) 스크립트 파일 참고
 
 ##### Kibana 빌드 스크립트 (`buildKibana.sh`)
 
@@ -774,8 +778,6 @@ $ docker service update --force --with-registry-auth elastic_kibana
 
 [deployBeats.sh](deployBeats.sh) Beats 일괄배포
 
-Beats 일괄배포
-
 ```bash
 $ ./deployBeats.sh
 ```
@@ -784,8 +786,6 @@ $ ./deployBeats.sh
 ##### Beats 일괄중지 스크립트 (`removeBeats.sh`)
 
 [removeBeats.sh](removeBeats.sh) Beats 일괄중지
-
-Beats 일괄중지
 
 ```bash
 $ ./removeBeats.sh
