@@ -3,7 +3,7 @@ version: "3.8"
 services:
 
   packetbeat:
-    image: docker.elastic.co/beats/packetbeat:${ELASTIC_VERSION:-7.10.2}
+    image: docker.elastic.co/beats/packetbeat:${ELASTIC_VERSION}
     # https://github.com/docker/swarmkit/issues/1951
     hostname: "{{.Node.Hostname}}-packetbeat"
     user: root
@@ -15,14 +15,16 @@ services:
     volumes:
       - packetbeat:/usr/share/packetbeat/data
       - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
     environment:
-      - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST:-node1}
-      - KIBANA_HOST=${KIBANA_HOST:-node1}
-      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME:-elastic}
-      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD:-changeme}
+      - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST}
+      - KIBANA_HOST=${KIBANA_HOST}
+      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME}
+      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
       # Eagerly waiting for Docker 19.06 release which will bring --privileged flag to Docker
       # Swarm Mode https://github.com/moby/moby/issues/24862#issuecomment-451594187
       # support for capabilities https://github.com/moby/moby/pull/38380
+      - TZ=Asia/Seoul
     cap_add:
       - NET_RAW
       - NET_ADMIN
@@ -37,6 +39,12 @@ networks:
 
 volumes:
   packetbeat:
+    # driver: local
+    # driver_opts:
+    #   type: none
+    #   o: bind
+    #   device: /home/ubuntu/data/packetbeat
+  
 
 configs:
   pb_config:

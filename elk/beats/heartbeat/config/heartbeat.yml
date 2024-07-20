@@ -1,0 +1,100 @@
+heartbeat.monitors:
+  #Monitor all containers using an icmp ping
+  - type: icmp
+    id: cluster-icmp-monitor
+    name: cluster-monitor
+    schedule: '*/5 * * * * * *'
+    hosts: [ "${CLUSTER1_HOST}","${CLUSTER2_HOST}","${ELASTICSEARCH_HOST}" ]
+    ipv4: true
+    ipv6: true
+    mode: any
+    timeout: 3s
+    wait: 1s
+
+  #Monitor the Elasticsearch instance.
+  - type: http
+    id: elasticsearch-http-monitor
+    name: elasticsearch-monitor
+    schedule: '@every 5s'
+    urls: [ "http://${ELASTICSEARCH_HOST}:9200" ]
+    ipv4: true
+    ipv6: true
+    mode: any
+    timeout: 3s
+    # username: '${ES_USERNAME:elastic}'
+    # password: '${ES_PASSWORD:changeme}'
+    check.request:
+      method: "GET"
+    check.response:
+      status: 200
+
+  #Monitor the Kibana instance.
+  - type: tcp
+    id: kibana-tcp-monitor
+    name: kibana-monitor
+    schedule: '@every 5s'
+    hosts: [ "${KIBANA_HOST}:80" ]
+    ipv4: true
+    ipv6: true
+    mode: any
+    timeout: 3s
+# - type: http
+#   schedule: '@every 5s'
+#   urls:
+#     - http://elasticsearch:9200
+#     - http://kibana:5601
+
+# - type: icmp
+#   schedule: '@every 5s'
+#   hosts:
+#     - elasticsearch
+#     - kibana
+
+processors:
+  - add_cloud_metadata:
+  - add_docker_metadata: ~
+
+logging.to_files: false
+
+#========================== Elasticsearch output ===============================
+output.elasticsearch:
+  hosts: [ "${ELASTICSEARCH_HOST}:9200" ]
+  username: ${ELASTICSEARCH_USERNAME}
+  password: ${ELASTICSEARCH_PASSWORD}
+  # 설정 참고
+#  index: "heartbeat-%{[agent.version]}-%{+yyyyMMdd}"   # 인덱스 이름을 날짜와 함께 설정
+#  index_patterns:
+#    - "heartbeat-*"
+#  index_template:
+#    name: "heartbeat-%{[agent.version]}"
+#    pattern: "heartbeat-%{[agent.version]}-*"
+#    settings:
+#      index:
+#        lifecycle:
+#          name: "metricbeat-%{[agent.version]}-policy"
+#          rollover_alias: "heartbeat-%{[agent.version]}"  # 롤링 대상 인덱스 이름을 설정
+#          max_age: "1d" # 1일 후에 인덱스 삭제
+
+#setup.template.name: "heartbeat"
+#setup.template.pattern: "heartbeat-*"
+#setup.ilm.enabled: false
+# custeom lim name
+#setup.ilm.policy_name: "beats-delete-policy"
+#setup.template.overwrite: true
+#setup.template.enabled: false
+
+#============================== Dashboards =====================================
+# setup.dashboards:
+#   enabled: true
+
+#============================== Kibana =========================================
+setup.kibana:
+  host: "${KIBANA_HOST}:80"
+  username: ${ELASTICSEARCH_USERNAME}
+  password: ${ELASTICSEARCH_PASSWORD}
+
+#============================== Xpack Monitoring ===============================
+#monitoring.enabled: true
+xpack.monitoring:
+  enabled: true
+  elasticsearch:

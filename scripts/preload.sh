@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# 기본 환경 변수 가져오기
+HOME='/home/ubuntu/docker-elastic'
+export ENV="${HOME}/env.sh"
+
+echo "SET OK"
+source ${ENV}
+
+
+# 설정된 환경변수들을 출력
+ENVIRONMENTS="HOME PROFILE UID ELASTIC_VERSION ELASTICSEARCH_USERNAME ELASTICSEARCH_PASSWORD SWARMPIT_ADMIN_USERNAME SWARMPIT_ADMIN_PASSWORD
+ELASTICSEARCH_HOST KIBANA_HOST CLUSTER1_HOST CLUSTER2_HOST INITIAL_MASTER_NODES ELASTICSEARCH_JVM_MEMORY ELASTICSEARCH_UPDATE_DELAY AWS_ECR_PRIVATE_DOMAIN"
+for ENVIRONMENT in $ENVIRONMENTS; do
+    bash -c "echo ${ENVIRONMENT}=$(eval echo \$${ENVIRONMENT})"
+done
+
+if [ ! -e "${ENV}" ];then
+    echo "The env file is required to run init.sh."
+    exit 1
+fi

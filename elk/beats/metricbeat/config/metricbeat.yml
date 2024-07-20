@@ -9,51 +9,72 @@ metricbeat.autodiscover:
       hints.enabled: true
 
 metricbeat.modules:
-#------------------------------- System Module -------------------------------
-- module: system
-  metricsets: ["cpu", "load", "memory", "network", "process", "process_summary", "core", "diskio", "socket"]
-  processes: ['.*']
-  process.include_top_n:
-    by_cpu: 5
-    by_memory: 5
-  period: 10s
-  cpu.metrics:  ["percentages"]
-  core.metrics: ["percentages"]
+  #------------------------------- System Module -------------------------------
+  - module: system
+    metricsets: [ "cpu", "load", "memory", "network", "process", "process_summary", "core", "diskio", "socket" ]
+    processes: [ '.*' ]
+    process.include_top_n:
+      by_cpu: 5
+      by_memory: 5
+    period: 10s
+    cpu.metrics: [ "percentages" ]
+    core.metrics: [ "percentages" ]
 
-- module: system
-  period: 1m
-  metricsets:
-    - filesystem
-    - fsstat
-  processors:
-  - drop_event.when.regexp:
-      system.filesystem.mount_point: '^/(sys|cgroup|proc|dev|etc|host|lib)($|/)'
+  - module: system
+    period: 1m
+    metricsets:
+      - filesystem
+      - fsstat
+    processors:
+      - drop_event.when.regexp:
+          system.filesystem.mount_point: '^/(sys|cgroup|proc|dev|etc|host|lib)($|/)'
 
-- module: system
-  period: 15m
-  metricsets:
-    - uptime
+  - module: system
+    period: 15m
+    metricsets:
+      - uptime
 
-#------------------------------- Docker Module -------------------------------
-- module: docker
-  metricsets: ["container", "cpu", "diskio", "healthcheck", "info", "memory", "network"]
-  hosts: ["unix:///var/run/docker.sock"]
-  period: 10s
+  #------------------------------- Docker Module -------------------------------
+  - module: docker
+    metricsets: [ "container", "cpu", "diskio", "healthcheck", "info", "memory", "network" ]
+    hosts: [ "unix:///var/run/docker.sock" ]
+    period: 10s
 
 #================================ Processors ===================================
 processors:
-- add_cloud_metadata: ~
-- add_docker_metadata: ~
-- add_locale:
-    format: offset
-- add_host_metadata:
-    netinfo.enabled: true
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+  - add_locale:
+      format: offset
+  - add_host_metadata:
+      netinfo.enabled: true
 
 #========================== Elasticsearch output ===============================
 output.elasticsearch:
-  hosts: ["${ELASTICSEARCH_HOST}:9200"]
+  hosts: [ "${ELASTICSEARCH_HOST}:9200" ]
   username: ${ELASTICSEARCH_USERNAME}
   password: ${ELASTICSEARCH_PASSWORD}
+  # 설정 참고
+#  index: "metricbeat-%{[agent.version]}-%{+yyyyMMdd}"   # 인덱스 이름을 날짜와 함께 설정
+#  index_patterns:
+#    - "metricbeat-*"
+#  index_template:
+#    name: "metricbeat-%{[agent.version]}"
+#    pattern: "metricbeat-*"
+#    settings:
+#      index:
+#        lifecycle:
+#          name: "metricbeat-%{[agent.version]}-policy"
+#          rollover_alias: "metricbeat-%{[agent.version]}"  # 롤링 대상 인덱스 이름을 설정
+#          max_age: "1d" # 1일 후에 인덱스 삭제
+
+#setup.template.name: "metricbeat"
+#setup.template.pattern: "metricbeat-*"
+#setup.ilm.enabled: false
+# custeom lim name
+#setup.ilm.policy_name: "beats-delete-policy"
+#setup.template.overwrite: true
+#setup.template.enabled: false
 
 #============================== Dashboards =====================================
 setup.dashboards:
@@ -66,6 +87,7 @@ setup.kibana:
   password: ${ELASTICSEARCH_PASSWORD}
 
 #============================== Xpack Monitoring ===============================
+#monitoring.enabled: true
 xpack.monitoring:
   enabled: true
   elasticsearch:

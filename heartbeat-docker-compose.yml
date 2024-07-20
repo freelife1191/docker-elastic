@@ -1,0 +1,64 @@
+version: "3.8"
+
+# https://www.elastic.co/guide/en/beats/auditbeat/current/auditbeat-overview.html
+# Does not look like Auditd is supported in Alpine linux: https://github.com/linuxkit/linuxkit/issues/52
+
+services:
+
+  heartbeat:
+    image: docker.elastic.co/beats/heartbeat:${ELASTIC_VERSION}
+    # https://github.com/docker/swarmkit/issues/1951
+    hostname: "{{.Node.Hostname}}-heartbeat"
+    # Need to override user so we can access the log files, and docker.sock
+    # privileged: true
+    user: root
+    # https://www.elastic.co/guide/en/beats/auditbeat/current/running-on-docker.html#_special_requirements
+    # PID and CAP_ADD options are ignored as they are Not yet available in swarm mode at the moment.
+    # Eagerly waiting for Docker 19.06 release which will bring --privileged flag to Docker
+    # Swarm Mode https://github.com/moby/moby/issues/24862#issuecomment-451594187
+    # support for capabilities https://github.com/moby/moby/pull/38380
+    configs:
+      - source: hb_config
+        target: /usr/share/heartbeat/heartbeat.yml
+    volumes:
+      #Allows us to report on docker from the hosts information.
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
+      - heartbeat:/usr/share/heartbeat/data
+      #Mount the Heartbeat configuration so users can make edits.
+      # - ./beats/heartbeat/config/heartbeat.yml:/usr/share/heartbeat/heartbeat.yml:ro
+    environment:
+      - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST}
+      - KIBANA_HOST=${KIBANA_HOST}
+      - CLUSTER1_HOST=${CLUSTER1_HOST}
+      - CLUSTER2_HOST=${CLUSTER2_HOST}
+      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME}
+      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+      - TZ=Asia/Seoul
+    networks:
+      - elastic
+    # depends_on:
+      # - elasticsearch
+      # elasticsearch: { condition: service_healthy }
+    # restart: unless-stopped
+    command: ["--strict.perms=false"]
+    deploy:
+      mode: global
+
+networks:
+  elastic:
+    external: true
+    # https://www.elastic.co/guide/en/beats/metricbeat/current/running-on-docker.html#monitoring-host
+    name: host
+
+volumes:
+  heartbeat:
+    # driver: local
+    # driver_opts:
+    #   type: none
+    #   o: bind
+    #   device: /home/ubuntu/data/auditbeat
+
+configs:
+  hb_config:
+    file: $PWD/elk/beats/heartbeat/config/heartbeat.yml

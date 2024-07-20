@@ -1,0 +1,34 @@
+# Module: elasticsearch
+# Docs: https://www.elastic.co/guide/en/beats/filebeat/7.10/filebeat-module-elasticsearch.html
+
+- module: elasticsearch
+  # Server log
+  server:
+    enabled: true
+
+    # Set custom paths for the log files. If left empty,
+    # Filebeat will choose the paths depending on your OS.
+    var.paths: 
+      - /var/log/elasticsearch/*_server.json
+
+  audit:
+    enabled: true
+    # Set custom paths for the log files. If left empty,
+    # Filebeat will choose the paths depending on your OS.
+    var.paths: 
+      - /var/log/elasticsearch/*_audit.json
+
+  slowlog:
+    enabled: true
+    # Set custom paths for the log files. If left empty,
+    # Filebeat will choose the paths depending on your OS.
+    var.paths:
+      - /var/log/elasticsearch/*_index_search_slowlog.json 
+      - /var/log/elasticsearch/*_index_indexing_slowlog.json
+
+  deprecation:
+    enabled: true
+    # Set custom paths for the log files. If left empty,
+    # Filebeat will choose the paths depending on your OS.
+    var.paths:
+      - /var/log/elasticsearch/*_deprecation.json

@@ -8,14 +8,17 @@ packetbeat.flows:
 
 #========================== Transaction protocols =============================
 packetbeat.protocols:
-- type: http
-  ports: [80, 8080, 5000]
-  send_headers: true
-  send_all_headers: true
+  - type: icmp
+    enabled: true
 
-- type: tls
-  ports: [443]
-  send_certificates: false
+  - type: http
+    ports: [ 80, 8080, 5000, 5601, 9200, 8081, 8002 ]
+    send_headers: true
+    send_all_headers: true
+
+  - type: tls
+    ports: [ 443 ]
+    send_certificates: false
 
 #=========================== Monitored processes ==============================
 packetbeat.procs:
@@ -29,26 +32,46 @@ packetbeat.procs:
 # contain CPU load percentages, but remove the fields that contain CPU ticks
 # values:
 processors:
-- include_fields:
-   fields: ["cpu"]
-- drop_fields:
-   fields: ["cpu.user", "cpu.system"]
-# The following example drops the events that have the HTTP response code 200:
-- drop_event:
-   when:
-      equals:
+  - include_fields:
+      fields: [ "cpu" ]
+  - drop_fields:
+      fields: [ "cpu.user", "cpu.system" ]
+  # The following example drops the events that have the HTTP response code 200:
+  - drop_event:
+      when:
+        equals:
           http.code: 200
-# The following example enriches each event with metadata from the cloud provider about the host machine.
-- add_docker_metadata:
-   host: "unix:///var/run/docker.sock"
-- add_cloud_metadata: ~
-- add_locale: ~
+  # The following example enriches each event with metadata from the cloud provider about the host machine.
+  - add_docker_metadata:
+      host: "unix:///var/run/docker.sock"
+  - add_cloud_metadata: ~
+  - add_locale: ~
 
 #========================== Elasticsearch output ===============================
 output.elasticsearch:
-  hosts: ["${ELASTICSEARCH_HOST}:9200"]
+  hosts: [ "${ELASTICSEARCH_HOST}:9200" ]
   username: ${ELASTICSEARCH_USERNAME}
   password: ${ELASTICSEARCH_PASSWORD}
+#  index: "packetbeat-7.10.2-%{+yyyyMMdd}"
+#  index_patterns:
+#    - "packetbeat-*"
+#  index_template:
+#    name: "packetbeat-%{[agent.version]}"
+#    pattern: "packetbeat-%{[agent.version]}-*"
+#    settings:
+#      index:
+#        lifecycle:
+#          name: "packetbeat-%{[agent.version]}-policy"
+#          rollover_alias: "packetbeat-%{[agent.version]}"  # 롤링 대상 인덱스 이름을 설정
+#          max_age: "1d" # 1일 후에 인덱스 삭제
+
+#setup.template.name: "packetbeat"
+#setup.template.pattern: "packetbeat-*"
+#setup.ilm.enabled: false
+# custeom lim name
+#setup.ilm.policy_name: "beats-delete-policy"
+#setup.template.overwrite: true
+#setup.template.enabled: false
 
 #============================== Dashboards =====================================
 setup.dashboards:
@@ -61,6 +84,7 @@ setup.kibana:
   password: ${ELASTICSEARCH_PASSWORD}
 
 #============================== Xpack Monitoring ===============================
+#monitoring.enabled: true
 xpack.monitoring:
   enabled: true
   elasticsearch:

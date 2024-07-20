@@ -1,0 +1,331 @@
+version: "3.8"
+
+# 10 Things to Consider When Planning Your Elasticsearch Project: https://ecmarchitect.com/archives/2015/07/27/4031
+# Using Apache JMeter to Test Elasticsearch: https://ecmarchitect.com/archives/2014/09/02/3915
+
+services:
+
+  swarm-listener:
+    image: dockerflow/docker-flow-swarm-listener:latest
+    hostname: swarm-listener
+    networks:
+      - elastic
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - DF_NOTIFY_CREATE_SERVICE_URL=http://proxy:8080/v1/docker-flow-proxy/reconfigure
+      - DF_NOTIFY_REMOVE_SERVICE_URL=http://proxy:8080/v1/docker-flow-proxy/remove
+      - TZ=Asia/Seoul
+    deploy:
+      placement:
+        max_replicas_per_node: 1
+        constraints: [node.role == manager]
+
+  proxy:
+    image: dockerflow/docker-flow-proxy:latest
+    hostname: proxy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "9200:9200"
+      - "8200:8200"
+    networks:
+      - elastic
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - LISTENER_ADDRESS=swarm-listener
+      - MODE=swarm
+      - BIND_PORTS=9200,8200
+      - TZ=Asia/Seoul
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  elasticsearch:
+    # image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
+    # image: amazon/opendistro-for-elasticsearch:1.13.3
+    image: ${AWS_ECR_PRIVATE_DOMAIN}/elasticsearch:${ELASTIC_VERSION}
+    # privileged: true
+    environment:
+      # https://github.com/docker/swarmkit/issues/1951
+      - node.name={{.Node.Hostname}}
+      - bootstrap.memory_lock=true # 아래 memlock 설정과 함께 스와핑을 비활성화
+      - ES_JAVA_OPTS=-Xms${ELASTICSEARCH_JVM_MEMORY} -Xmx${ELASTICSEARCH_JVM_MEMORY}
+      - discovery.seed_hosts=elasticsearch
+      - cluster.initial_master_nodes=${INITIAL_MASTER_NODES}
+      - cluster.name=elastic
+      - network.host=0.0.0.0
+      - xpack.license.self_generated.type=basic
+      - xpack.security.enabled=false
+      - xpack.monitoring.collection.enabled=false
+      - xpack.security.audit.enabled=false
+      - action.auto_create_index=true
+      # - xpack.security.transport.ssl.enabled=true
+      # - xpack.security.transport.ssl.client_authentication=none
+      # - xpack.security.transport.ssl.verification_mode=none
+      - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD}
+      # - node.max_local_storage_nodes='3'
+      # - path.logs=/usr/share/elasticsearch/log
+      - TZ=Asia/Seoul
+    ulimits:
+      nproc:
+        soft: 65536
+        hard: 65536
+      nofile:
+        soft: 65536
+        hard: 65536
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - elastic
+    configs:
+      - source: elastic_log4j2
+        target: /usr/share/elasticsearch/config/log4j2.properties
+      # - source: elastic_analysis_stopword
+        # target: /usr/share/elasticsearch/config/analysis/stopword.txt
+      # - source: elastic_analysis_synonyms
+        # target: /usr/share/elasticsearch/config/analysis/synonyms.txt
+      # - source: elastic_analysis_user_dictionary
+        # target: /usr/share/elasticsearch/config/analysis/user_dictionary.txt
+    volumes:
+      - elasticsearch:/usr/share/elasticsearch/data
+      - elasticsearch-log:/usr/share/elasticsearch/logs
+      - /etc/localtime:/etc/localtime:ro
+      - elasticsearch-analysis:/usr/share/elasticsearch/config/analysis:rw
+      # - ./elasticsearch/config/elasticsearch.yml:/etc/elasticsearch/config/elasticsearch.yml
+      # - ./elasticsearch/config/jvm.options:/etc/elasticsearch/config/jvm.options
+      # - ./elasticsearch/config/log4j2.properties:/etc/elasticsearch/config/log4j2.properties
+    #configs:
+    #  - source: sysctl_config
+    #    target: /etc/sysctl.conf
+    deploy:
+      mode: 'global'
+      endpoint_mode: dnsrr
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.servicePath=/
+        - com.df.port=9200
+        - com.df.srcPort=9200
+      # 옵션 참고: https://2mukee.tistory.com/295
+      update_config: # 서비스 업데이트 구성 방법
+        # 한 번에 업데이트할 컨테이너 수
+        parallelism: 1
+        delay: ${ELASTICSEARCH_UPDATE_DELAY} # 기본값=0 / 각 컨테이너 그룹 업데이트 사이 대기 시간
+        monitor: ${ELASTICSEARCH_UPDATE_DELAY} # 기본값=0 / 각 작업 업데이트 후 실패를 모니터링 하기 위한 시간<단위에 표시> / ns, us, ms, s, m, h
+        failure_action: rollback # 기본값=pause / 업데이트 실패 시 수행할 작업 / continue, rollback, pause
+        order: start-first # 기본값=stop-first / 업데이트 중 작업 순서 / stop-first <새 작업 실행전 오래된 작업 중지>, start-first<새 작업 실행 후 실행중 작업에 중첩되어 이전 작업 실행
+        #max_failure_ratio: 0 #기본값=0 / 업데이트 중 허용되는 실패율
+      restart_policy: # 컨테이너가 종료 될때 컨테이너를 다시 시작하는 여부
+        condition: on-failure # none(설정안함), on-failure(장애 발생시), any (기본 값 / 어떤 상황이든)
+        #delay: 60s # 기본값 = 0 / 재시작 시도 간 대기시간
+        #max_attempts: 2 # 기본값=사용안함 / 컨테이너 재시작 시도 횟수
+        #window: 60s # 기본값=즉시결정 / 재시작 성공 여부를 결정하기 전 대기하는 시간
+      #rollback_config: # 서비스 업데이트 실패시 롤백하는 방법
+      #  parallelism: 1 # 한 번에 롤백할 컨테이너 수 / 0으로 설정시 모든 컨테이너가 동시에 롤백
+      #  delay: 60s # 기본값=0 / 각 컨테이너 그룹 사이에 대기하는 시간
+      #  failure_action: pause # 기본값=pause / 롤백 실패 시 수행할 작업 / continue, pause
+      #  monitor: 60s # 기본값=0 / 각 작업 업데이트 후 실패를 모니터링 하기 위한 시간<단위에 표시> / ns, us, ms, s, m, h
+      #  max_failure_ratio: 0 # 기본값=0 / 롤백 중 허용되는 실패율
+      #  order: start-first # 기본값=stop-first / 롤백 중 작업 순서 / stop-first <새로운 작업 시작 전에 이전작업 정지>, start-first<새 작업 실행 후 실행중 작업에 중첩되어 이전 작업 실행>
+      # resources:
+      #   limits:
+      #     cpus: "1.5"
+      #     memory: 4.5G
+      #   reservations:
+      #     cpus: "1"
+      #     memory: 4.5G
+      #healthcheck:
+      # test: ["CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1"]
+      # test: curl -u elastic:elastic -s -f localhost:9200/_cat/health >/dev/null || exit 1
+      # test: curl -s http://elasticsearch01:9200 >/dev/null || exit 1
+      # interval: 30s
+      # timeout: 10s
+      # retries: 50
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:${ELASTIC_VERSION}
+    hostname: "{{.Node.Hostname}}-logstash"
+    environment:
+      - XPACK_MONITORING_ELASTICSEARCH_URL=http://elasticsearch:9200
+      - XPACK_MONITORING_ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME}
+      - XPACK_MONITORING_ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+      #- LS_JAVA_OPTS="-Xms1g -Xmx1g"
+      #- xpack.monitoring.enabled=true
+      - TZ=Asia/Seoul
+    ports:
+      - "12201:12201/udp"
+    networks:
+      - elastic
+    configs:
+      - source: ls_config
+        target: /usr/share/logstash/pipeline/logstash.conf
+    volumes:
+      - logstash:/usr/share/logstash/data
+      - logstash-log:/usr/share/logstash/logs
+      - /etc/localtime:/etc/localtime:ro
+    deploy:
+      placement:
+        max_replicas_per_node: 1
+    # deploy:
+    #   mode: 'replicated'
+    #   endpoint_mode: dnsrr
+    #   labels:
+    #     - com.df.notify=true
+    #     - com.df.distribute=true
+    #     - com.df.servicePath=/
+    #     - com.df.port=12201
+    #     - com.df.srcPort=12201
+    #   replicas: 1
+    #   placement:
+    #     max_replicas_per_node: 1
+    #   restart_policy:
+    #     condition: on-failure
+    #     max_attempts: 2
+
+  kibana:
+    # image: docker.elastic.co/kibana/kibana:${ELASTIC_VERSION}
+    # image: amazon/opendistro-for-elasticsearch-kibana:latest
+    image: ${AWS_ECR_PRIVATE_DOMAIN}/kibana:${ELASTIC_VERSION}
+    hostname: "{{.Node.Hostname}}-kibana"
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME}
+      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+      - SERVER_NAME="{{.Node.Hostname}}-kibana"
+      # - logging.dest=/usr/share/kibana/logs/kibana.log
+      # - server.name=kibana
+      # - server.host=0.0.0.0
+      - monitoring.ui.container.elasticsearch.enabled=true
+      - monitoring.ui.container.logstash.enabled=true
+      #- action.auto_create_index=true
+      # - node.max_local_storage_nodes='3'
+      # depends_on:
+      #   elasticsearch:
+      #       condition: service_healthy
+      # healthcheck:
+      #     test: ["CMD-SHELL","curl --fail http://localhost:5601 || exit 1"]
+      #     interval: 10s
+      #     timeout: 10s
+      #     retries: 120
+      - TZ=Asia/Seoul
+    networks:
+      - elastic
+    #configs:
+    #  - source: kibana_config
+    #    target: /usr/share/kibana/config/kibana.yml
+    volumes:
+      - kibana:/usr/share/kibana/data
+      - kibana-log:/usr/share/kibana/logs
+      - /etc/localtime:/etc/localtime:ro
+    deploy:
+      placement:
+        max_replicas_per_node: 1
+        constraints: [node.role == manager]
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.servicePath=/
+        - com.df.port=5601
+        - com.df.srcPort=80
+
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:${ELASTIC_VERSION}
+    hostname: "{{.Node.Hostname}}-apm-server"
+    networks:
+      - elastic
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=Asia/Seoul
+    command: >
+      --strict.perms=false -e
+      -E apm-server.rum.enabled=true
+      -E setup.kibana.host=kibana:5601
+      -E setup.kibana.username=${ELASTICSEARCH_USERNAME}
+      -E setup.kibana.password=${ELASTICSEARCH_PASSWORD}
+      -E setup.template.settings.index.number_of_replicas=0
+      -E apm-server.kibana.enabled=true
+      -E apm-server.kibana.host=kibana:5601
+      -E apm-server.kibana.username=${ELASTICSEARCH_USERNAME}
+      -E apm-server.kibana.password=${ELASTICSEARCH_PASSWORD}
+      -E output.elasticsearch.hosts=["elasticsearch:9200"]
+      -E output.elasticsearch.username=${ELASTICSEARCH_USERNAME}
+      -E output.elasticsearch.password=${ELASTICSEARCH_PASSWORD}
+      -E xpack.monitoring.enabled=true
+    deploy:
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.servicePath=/
+        - com.df.port=8200
+        - com.df.srcPort=8200
+
+networks:
+  elastic:
+    external: true
+
+volumes:
+  elasticsearch:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: /home/ubuntu/data/elasticsearch
+  elasticsearch-log:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: /home/ubuntu/log/elasticsearch
+  elasticsearch-analysis:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: $PWD/elk/elasticsearch/config/analysis
+  kibana:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/ubuntu/data/kibana
+  kibana-log:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/ubuntu/log/kibana
+  logstash:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: /home/ubuntu/data/logstash
+  logstash-log:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: /home/ubuntu/log/logstash
+
+configs:
+  # elastic_analysis_stopword:
+  #   file: $PWD/elk/elasticsearch/config/analysis/stopword.txt
+  #elastic_analysis_synonyms:
+  #  file: $PWD/elk/elasticsearch/config/analysis/synonyms.txt
+  #elastic_analysis_user_dictionary:
+  #  file: $PWD/elk/elasticsearch/config/analysis/user_dictionary.txt
+  elastic_log4j2:
+    file: $PWD/elk/elasticsearch/config/log4j2.properties
+  #kibana_config:
+  #  file: $PWD/elk/kibana/config/kibana.yml
+  ls_config:
+    file: $PWD/elk/logstash/config/pipeline/logstash.conf

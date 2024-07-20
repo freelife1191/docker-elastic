@@ -3,7 +3,7 @@ version: "3.8"
 services:
 
   metricbeat:
-    image: docker.elastic.co/beats/metricbeat:${ELASTIC_VERSION:-7.10.2}
+    image: docker.elastic.co/beats/metricbeat:${ELASTIC_VERSION}
     # https://github.com/docker/swarmkit/issues/1951
     hostname: "{{.Node.Hostname}}-metricbeat"
     user: root
@@ -17,12 +17,14 @@ services:
       - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
       - /:/hostfs:ro
       - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
       - metricbeat:/usr/share/metricbeat/data
     environment:
-      - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST:-node1}
-      - KIBANA_HOST=${KIBANA_HOST:-node1}
-      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME:-elastic}
-      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD:-changeme}
+      - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST}
+      - KIBANA_HOST=${KIBANA_HOST}
+      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME}
+      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+      - TZ=Asia/Seoul
     # disable strict permission checks
     command: ["--strict.perms=false", "-system.hostfs=/hostfs"]
     deploy:
@@ -36,6 +38,11 @@ networks:
 
 volumes:
   metricbeat:
+    # driver: local
+    # driver_opts:
+    #   type: none
+    #   o: bind
+    #   device: /home/ubuntu/data/metricbeat
 
 configs:
   mb_config:

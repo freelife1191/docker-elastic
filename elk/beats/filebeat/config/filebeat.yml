@@ -1,17 +1,22 @@
 # https://github.com/elastic/beats/blob/master/filebeat/filebeat.reference.yml
+# filebeat.registry.path: /usr/share/filebeat/data/registry
+filebeat.config.modules:
+  path: ${path.home}/modules.d/*.yml
+  # path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
 
 filebeat.modules:
-- module: system
-  syslog:
-    enabled: true
-  auth:
-    enabled: true
-- module: auditd
-  log:
-    # - Does not look like Auditd is supported in Alpine linux: https://github.com/linuxkit/linuxkit/issues/52
-    # - CentOS does not need us to install the audit system, it ships as standard. If you are using Ubuntu, though,
-    # this is probably something you would want to install. (sudo apt-get install -y auditd audispd-plugins)
-    enabled: true
+  - module: system
+    syslog:
+      enabled: true
+    auth:
+      enabled: true
+      # - module: auditd
+      # log:
+      # - Does not look like Auditd is supported in Alpine linux: https://github.com/linuxkit/linuxkit/issues/52
+      # - CentOS does not need us to install the audit system, it ships as standard. If you are using Ubuntu, though,
+      # this is probably something you would want to install. (sudo apt-get install -y auditd audispd-plugins)
+      # enabled: true
 
 #filebeat.inputs:
 #- type: container
@@ -19,7 +24,11 @@ filebeat.modules:
 #  paths:
 #    -/var/lib/docker/containers/*/*.log
 #  stream: all # can be all, stdout or stderr
-
+# filebeat.inputs:
+# - type: log
+#   enabled: true
+#   paths:
+#     - /var/log/elasticsearch/*.log
 #========================== Filebeat autodiscover ==============================
 # See this URL on how to run Apache2 Filebeat module: # https://www.elastic.co/guide/en/beats/filebeat/current/running-on-docker.html
 filebeat.autodiscover:
@@ -31,18 +40,40 @@ filebeat.autodiscover:
 
 #================================ Processors ===================================
 processors:
-- add_cloud_metadata: ~
-- add_docker_metadata: ~
-- add_locale:
-    format: offset
-- add_host_metadata:
-    netinfo.enabled: true
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+  - add_locale:
+      format: offset
+  - add_host_metadata:
+      netinfo.enabled: true
 
 #========================== Elasticsearch output ===============================
+# https://www.elastic.co/guide/en/beats/filebeat/7.10/elasticsearch-output.html
 output.elasticsearch:
-  hosts: ["${ELASTICSEARCH_HOST}:9200"]
+  hosts: [ "${ELASTICSEARCH_HOST}:9200" ]
   username: ${ELASTICSEARCH_USERNAME}
   password: ${ELASTICSEARCH_PASSWORD}
+  # 설정 참고
+#  index: "filebeat-%{+yyyyMMdd}"   # 인덱스 이름을 날짜와 함께 설정
+#  index_patterns:
+#    - "filebeat-*"
+#  index_template:
+#   name: "filebeat-%{[agent.version]}"
+#   pattern: "filebeat-%{[agent.version]}-*"
+#   settings:
+#     index:
+#       lifecycle:
+#         rollover_alias: "filebeat-%{[agent.version]}"  # 롤링 대상 인덱스 이름을 설정
+#         max_age: "1d" # 1일 후에 인덱스 삭제
+
+# https://www.elastic.co/guide/en/beats/filebeat/7.10/configuration-template.html
+#setup.template.name: "filebeat"
+#setup.template.pattern: "filebeat-*"
+#setup.ilm.enabled: false
+# custeom lim name
+#setup.ilm.policy_name: "filebeat-delete-policy"
+#setup.template.overwrite: true
+#setup.template.enabled: false
 
 #============================== Dashboards =====================================
 setup.dashboards:
@@ -55,6 +86,7 @@ setup.kibana:
   password: ${ELASTICSEARCH_PASSWORD}
 
 #============================== Xpack Monitoring ===============================
+#monitoring.enabled: true
 xpack.monitoring:
   enabled: true
   elasticsearch:
