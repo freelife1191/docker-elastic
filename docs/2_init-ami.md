@@ -3,6 +3,18 @@
 EC2로 ELK Docker Swarm 환경울 구성하기 위해 편의상 필요한 설정들을 사전에 설정하여 AMI로 만들어둔다
 
 
+<!-- TOC -->
+* [AWS EC2(Ubuntu) ELK AMI 초기 셋팅](#aws-ec2ubuntu-elk-ami-초기-셋팅)
+  * [🚦 sysctl 설정](#-sysctl-설정)
+  * [🚦 ELK 서버용 초기 스크립트 셋팅](#-elk-서버용-초기-스크립트-셋팅)
+      * [► 1. IP 조회 스크립트 (`get-ip.sh`)](#-1-ip-조회-스크립트-get-ipsh-)
+      * [► 2. ELK 서버 셋팅용 초기 디렉토리 생성 스크립트 (`make-dirs.sh`)](#-2-elk-서버-셋팅용-초기-디렉토리-생성-스크립트-make-dirssh)
+      * [► 3. ELK 데이터 적재용 볼륨 마운트 스크립트 (`volume-mount.sh`)](#-3-elk-데이터-적재용-볼륨-마운트-스크립트-volume-mountsh)
+      * [► 4. SSH KEY 생성용 스크립트 (`set-sshkey.sh`)](#-4-ssh-key-생성용-스크립트-set-sshkeysh)
+      * [► 5. ELK 노드 셋팅을 위한 HOST 설정 스크립트 (`set-host.sh`)](#-5-elk-노드-셋팅을-위한-host-설정-스크립트-set-hostsh)
+  * [🚦 EC2 인스턴스 ECR 허용 정책 추가](#-ec2-인스턴스-ecr-허용-정책-추가)
+      * [► AWS ACCESS KEY 없이 ECR Login을 처리하기 위해 EC2에 IAM Role(`aws-ecr-ec2-role`) 생성](#-aws-access-key-없이-ecr-login을-처리하기-위해-ec2에-iam-roleaws-ecr-ec2-role-생성)
+<!-- TOC -->
 
 
 ## 🚦 sysctl 설정
