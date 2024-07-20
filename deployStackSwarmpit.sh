@@ -9,7 +9,7 @@ ENV="${HOME}/env.sh"
 source ${ENV}
 
 #export SWARMPIT_ADMIN_USERNAME=${1:-admin}
-#export SWARMPIT_ADMIN_PASSWORD=${2:-'tourvis!@'}
+#export SWARMPIT_ADMIN_PASSWORD=${2:-admin'}
 
 # https://swarmpit.io/
 # https://github.com/swarmpit/swarmpit
