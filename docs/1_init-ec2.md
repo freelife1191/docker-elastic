@@ -1,12 +1,13 @@
-# Linux(Ubuntu) AWS EC2 초기 환경 셋팅(Docker, zsh, oh-my-zsh, 테마, 랜덤 이모지 프롬프트)
+# AWS EC2(Ubuntu) 초기 환경 셋팅(Docker, zsh, oh-my-zsh, 테마, 랜덤 이모지 프롬프트)
 
 
 <!-- TOC -->
-- [Linux(Ubuntu) AWS EC2 초기 환경 셋팅(Docker, zsh, oh-my-zsh, 테마, 랜덤 이모지 프롬프트)](#linuxubuntu-aws-ec2-초기-환경-셋팅docker-zsh-oh-my-zsh-테마-랜덤-이모지-프롬프트)
+- [AWS EC2(Ubuntu) 초기 환경 셋팅(Docker, zsh, oh-my-zsh, 테마, 랜덤 이모지 프롬프트)](#aws-ec2ubuntu-초기-환경-셋팅docker-zsh-oh-my-zsh-테마-랜덤-이모지-프롬프트)
   - [🚦 0. 기본 설정 및 패키지 설치](#-0-기본-설정-및-패키지-설치)
       - [► 카카오 미러 서버로 변경](#-카카오-미러-서버로-변경)
       - [► ubuntu 업데이트 및 업그레이드](#-ubuntu-업데이트-및-업그레이드)
   - [🚦 1. Docker 설치](#-1-docker-설치)
+      - [► 도커 그룹 추가](#-도커-그룹-추가)
       - [► docker 및 docker compose 버전 확인](#-docker-및-docker-compose-버전-확인)
   - [🚦 2. DCS 툴 설치](#-2-dcs-툴-설치)
       - [► DCS 설명](#-dcs-설명)
@@ -69,7 +70,7 @@ Amazone Linux 는 별도의 설치 커맨드로 설치해야됨
 $ curl -s https://get.docker.com/ | sudo sh
 ```
 
-**도커 그룹 추가**
+#### ► 도커 그룹 추가
 
 ```bash
 # 그룹확인

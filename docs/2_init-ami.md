@@ -1,4 +1,4 @@
-# Linux(Ubuntu) AWS EC2 ELK AMI 초기 셋팅
+# AWS EC2(Ubuntu) ELK AMI 초기 셋팅
 
 EC2로 ELK Docker Swarm 환경울 구성하기 위해 편의상 필요한 설정들을 사전에 설정하여 AMI로 만들어둔다
 
@@ -48,7 +48,7 @@ $ cd ~/scripts
 
 ```shell
 #!/bin/bash
-
+- 
 # 인스턴스 IP 정보를 쉽게 조회하기 위한 스크립트
 
 CHECK_OS=$(uname -s)

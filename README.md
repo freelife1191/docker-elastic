@@ -1,4 +1,4 @@
-# [AWS EC2] Docker Swarm 기반의 멀티 노드 ELK 환경 구성
+# AWS EC2(Ubuntu) Docker Swarm 기반의 멀티 노드 ELK 환경 구성
 
 [Elastic Stack](https://www.elastic.co/products) _(v7.10.2 by default)_
 
@@ -35,7 +35,7 @@
 
 
 <!-- TOC -->
-- [\[AWS EC2\] Docker Swarm 기반의 멀티 노드 ELK 환경 구성](#aws-ec2-docker-swarm-기반의-멀티-노드-elk-환경-구성)
+- [AWS EC2(Ubuntu) Docker Swarm 기반의 멀티 노드 ELK 환경 구성](#aws-ec2ubuntu-docker-swarm-기반의-멀티-노드-elk-환경-구성)
     - [📌 참고](#-참고)
   - [🚦 Architecture](#-architecture)
   - [🚦 Spac](#-spac)
@@ -66,6 +66,7 @@
     - [📗 1. ELK 이미지 빌드 (최초에만 생성 이미 생성되어 있음)](#-1-elk-이미지-빌드-최초에만-생성-이미-생성되어-있음)
       - [► 1. Elasticsearch 이미지 빌드 (최초에만 생성 이미 생성되어 있음)](#-1-elasticsearch-이미지-빌드-최초에만-생성-이미-생성되어-있음)
         - [Elasticsearch (`Dockerfile`)](#elasticsearch-dockerfile)
+        - [Elasticsearch 공통 빌드 스크립트 (Dockerfile)](#elasticsearch-공통-빌드-스크립트-dockerfile)
         - [Elasticsearch 빌드 스크립트 (`buildElastic.sh`)](#elasticsearch-빌드-스크립트-buildelasticsh)
       - [► 2. Kibana 이미지 빌드 (최초에만 생성 이미 생성되어 있음)](#-2-kibana-이미지-빌드-최초에만-생성-이미-생성되어-있음)
         - [Kibana (`Dockerfile`)](#kibana-dockerfile)
@@ -241,7 +242,7 @@ es2
 
 
 ```bash
-$ cd ~/scripts/server-init
+$ cd ~/scripts
 $ ./volume-mount.sh
 ```
 
@@ -608,15 +609,17 @@ $ docker stack ps --no-trunc swarmpit
 
 #### ► 1. Elasticsearch 이미지 빌드 (최초에만 생성 이미 생성되어 있음)
 
-스크립트 파일 참고
-
 ##### Elasticsearch (`Dockerfile`)
 
-[elk/elasticsearch/Dockerfile](elk/elasticsearch/Dockerfile)
+[elk/elasticsearch/Dockerfile](elk/elasticsearch/Dockerfile) 스크립트 파일 참고
+
+##### Elasticsearch 공통 빌드 스크립트 (Dockerfile)
+
+[buildCommon.sh](scripts/buildCommon.sh) 스크립트 파일 참고
 
 ##### Elasticsearch 빌드 스크립트 (`buildElastic.sh`)
 
-[buildElastic.sh](scripts/buildElastic.sh)
+[buildElastic.sh](scripts/buildElastic.sh) 스크립트 파일 참고
 
 ```bash
 $ cd scripts
