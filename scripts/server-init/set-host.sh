@@ -2,7 +2,7 @@
 
 # master host와 hostname을 변경하는 스크립트
 # argument: [hostname] [master private ip] [cluster1 private ip] [cluster2 private ip]
-# 사용 예시: ./set-host.sh master 172.31.1.1 172.31.1.2 172.31.1.3
+# 사용 예시: ./set-host.sh master 10.10.0.1 10.10.0.2 10.10.0.3
 
 if [ -n "$1" ];then
   echo -e "\n=== hostname 등록"

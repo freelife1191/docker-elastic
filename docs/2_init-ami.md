@@ -171,6 +171,8 @@ bash -c "~/scripts/make-dirs.sh"
 
 #### ► 4. SSH KEY 생성용 스크립트 (`set-sshkey.sh`)
 
+[`set-sshkey.sh`](../scripts/server-init/set-sshkey.sh)
+
 BitBucket 또는 다른 Git 서비스와의 연동을 위해 SSH KEY 등록이 필요한 경우를 대비해 서버의 SSH KEY 를 생성하는 스크립트
 
 ```shell
@@ -189,6 +191,8 @@ cat ~/.ssh/id_ed25519.pub
 
 
 #### ► 5. ELK 노드 셋팅을 위한 HOST 설정 스크립트 (`set-host.sh`)
+
+[`set-host.sh`](../scripts/server-init/set-sshkey.sh)
 
 ```shell
 #!/bin/bash

@@ -33,49 +33,76 @@
 
 
 <!-- TOC -->
-* [[AWS EC2] Docker Swarm 기반의 멀티 노드 ELK 환경 구성](#aws-ec2-docker-swarm-기반의-멀티-노드-elk-환경-구성)
-    * [📌 Docker Swarm 참고](#-docker-swarm-참고)
-  * [🚦 Architecture](#-architecture)
-  * [🚦 Spac](#-spac)
-  * [🚦 EC2 Incetence Configuration](#-ec2-incetence-configuration)
-    * [📕 1. 초기 인스턴스 설정](#-1-초기-인스턴스-설정)
-      * [► 0. AMI로 인스턴스 생성](#-0-ami로-인스턴스-생성)
-      * [► 1. 추가 볼륨 마운트](#-1-추가-볼륨-마운트)
-      * [► 2. host 설정](#-2-host-설정)
-      * [► 3. BitBucket SSH 키 생성 및 등록](#-3-bitbucket-ssh-키-생성-및-등록)
-      * [🚫️ 4. AWS 키를 `.zshrc`에 등록 (EC2 IAM Role 설정X)](#-4-aws-키를-zshrc에-등록-ec2-iam-role-설정x)
-      * [► 5. sysctl 설정 확인](#-5-sysctl-설정-확인)
-  * [🚦 Docker Swarm Configuration](#-docker-swarm-configuration)
-    * [📘 1. ELK 구성 스크립트 Git Clone](#-1-elk-구성-스크립트-git-clone)
-    * [📘 2. Docker Swarm 초기 구축 환경 설정](#-2-docker-swarm-초기-구축-환경-설정)
-      * [► 1. 초기 설정 스크립트 수행](#-1-초기-설정-스크립트-수행)
-      * [► 2. AWS CLI를 설치하고 ECR Login을 테스트](#-2-aws-cli를-설치하고-ecr-login을-테스트)
-      * [► 3. Docker Swarm 초기 설정](#-3-docker-swarm-초기-설정)
-      * [► 4. 1분마다 동작하는 Cronjob 등록](#-4-1분마다-동작하는-cronjob-등록)
-    * [📘 3. Swarmpit 설치](#-3-swarmpit-설치)
-  * [🚦 ELK Configuration](#-elk-configuration)
-    * [📗 1. ELK 이미지 빌드 (최초에만 생성 이미 생성되어 있음)](#-1-elk-이미지-빌드-최초에만-생성-이미-생성되어-있음)
-      * [► 1. Elasticsearch 이미지 빌드 (최초에만 생성 이미 생성되어 있음)](#-1-elasticsearch-이미지-빌드-최초에만-생성-이미-생성되어-있음)
-      * [► 2. Kibana 이미지 빌드 (최초에만 생성 이미 생성되어 있음)](#-2-kibana-이미지-빌드-최초에만-생성-이미-생성되어-있음)
-    * [📗 2. ELK Stack 구축](#-2-elk-stack-구축)
-      * [► 1. Elastic Stack 배포](#-1-elastic-stack-배포)
-      * [► 2. Beats 일괄배포/중지](#-2-beats-일괄배포중지)
-      * [► 3. Filebeat 배포 (Beats 스크립트에 포함되서 설치됨)](#-3-filebeat-배포-beats-스크립트에-포함되서-설치됨)
-      * [► 4. Metricbeat 배포 (Beats 스크립트에 포함되서 설치됨)](#-4-metricbeat-배포-beats-스크립트에-포함되서-설치됨)
-      * [► 5. Packetbeat 배포 (Beats 스크립트에 포함되서 설치됨)](#-5-packetbeat-배포-beats-스크립트에-포함되서-설치됨)
-      * [► 6. Heartbeat 배포 (Beats 스크립트에 포함되서 설치됨)](#-6-heartbeat-배포-beats-스크립트에-포함되서-설치됨)
-      * [► 7. Auditbeat 배포 (사용안함)](#-7-auditbeat-배포-사용안함)
-  * [📌 추가 모니터링 툴](#-추가-모니터링-툴)
-      * [► 1. ADD CLUSTER 클릭](#-1-add-cluster-클릭)
-      * [► 2. ELK URL PORT 입력](#-2-elk-url-port-입력)
-      * [► 3. 모니터링 화면](#-3-모니터링-화면)
-  * [🚦 Kibana Management](#-kibana-management)
-    * [📌 Stack Management (Index 용량 및 정책 관리)](#-stack-management-index-용량-및-정책-관리)
-      * [► Index Policy 정책 설정](#-index-policy-정책-설정)
-    * [📌 Stack Monitoring (Elasticsearch 모니터링 및 각종 지표 확인)](#-stack-monitoring-elasticsearch-모니터링-및-각종-지표-확인)
-      * [► Elasticsearch 모니터링](#-elasticsearch-모니터링)
-        * [Elasticsearch Overview](#elasticsearch-overview)
-        * [Elasticsearch Node](#elasticsearch-node)
+- [\[AWS EC2\] Docker Swarm 기반의 멀티 노드 ELK 환경 구성](#aws-ec2-docker-swarm-기반의-멀티-노드-elk-환경-구성)
+    - [📌 Docker Swarm 참고](#-docker-swarm-참고)
+  - [🚦 Architecture](#-architecture)
+  - [🚦 Spac](#-spac)
+  - [🚦 EC2 Incetence Configuration](#-ec2-incetence-configuration)
+    - [📕 1. 초기 인스턴스 설정](#-1-초기-인스턴스-설정)
+      - [► 0. AMI로 인스턴스 생성](#-0-ami로-인스턴스-생성)
+      - [► 1. 추가 볼륨 마운트 (`volume-mount.sh`)](#-1-추가-볼륨-마운트-volume-mountsh)
+      - [► 2. host 설정 (`set-host.sh`)](#-2-host-설정-set-hostsh)
+      - [► 3. BitBucket SSH 키 생성 및 등록 (`set-sshkey.sh`)](#-3-bitbucket-ssh-키-생성-및-등록-set-sshkeysh)
+      - [🚫️ 4. AWS 키를 `.zshrc`에 등록 (EC2 IAM Role 설정X) (`set-awskey.sh`)](#️-4-aws-키를-zshrc에-등록-ec2-iam-role-설정x-set-awskeysh)
+      - [► 5. sysctl 설정 확인](#-5-sysctl-설정-확인)
+  - [🚦 Docker Swarm Configuration](#-docker-swarm-configuration)
+    - [📘 1. ELK 구성 스크립트 Git Clone](#-1-elk-구성-스크립트-git-clone)
+    - [📘 2. Docker Swarm 초기 구축 환경 설정](#-2-docker-swarm-초기-구축-환경-설정)
+      - [► 1. 초기 설정 스크립트 수행](#-1-초기-설정-스크립트-수행)
+        - [환경변수 스크립트 (`env.sh`)](#환경변수-스크립트-envsh)
+        - [사전 실행 스크립트 (`preload.sh`)](#사전-실행-스크립트-preloadsh)
+        - [초기 셋팅 스크립트 (`init.sh`)](#초기-셋팅-스크립트-initsh)
+      - [► 2. AWS CLI를 설치하고 ECR Login을 테스트](#-2-aws-cli를-설치하고-ecr-login을-테스트)
+        - [ECR 로그인 스크립트 (`ecr-login.sh`)](#ecr-로그인-스크립트-ecr-loginsh)
+      - [► 3. 1분마다 동작하는 Cronjob 등록](#-3-1분마다-동작하는-cronjob-등록)
+        - [크론잡 실행 스크립트 (`cron-start.sh`)](#크론잡-실행-스크립트-cron-startsh)
+      - [► 4. Docker Swarm 초기 설정 (`docker-swarm-init.sh`)](#-4-docker-swarm-초기-설정-docker-swarm-initsh)
+    - [📘 3. Swarmpit 설치](#-3-swarmpit-설치)
+        - [Swarmpit Docker Compose (`swarmpit-docker-compose.yml`)](#swarmpit-docker-compose-swarmpit-docker-composeyml)
+        - [Swarmpit 배포 스크립트 (`deployStackSwarmpit.sh`)](#swarmpit-배포-스크립트-deploystackswarmpitsh)
+  - [🚦 ELK Configuration](#-elk-configuration)
+    - [📗 1. ELK 이미지 빌드 (최초에만 생성 이미 생성되어 있음)](#-1-elk-이미지-빌드-최초에만-생성-이미-생성되어-있음)
+      - [► 1. Elasticsearch 이미지 빌드 (최초에만 생성 이미 생성되어 있음)](#-1-elasticsearch-이미지-빌드-최초에만-생성-이미-생성되어-있음)
+        - [Elasticsearch (`Dockerfile`)](#elasticsearch-dockerfile)
+        - [Elasticsearch 빌드 스크립트 (`buildElastic.sh`)](#elasticsearch-빌드-스크립트-buildelasticsh)
+      - [► 2. Kibana 이미지 빌드 (최초에만 생성 이미 생성되어 있음)](#-2-kibana-이미지-빌드-최초에만-생성-이미-생성되어-있음)
+        - [Kibana (`Dockerfile`)](#kibana-dockerfile)
+        - [Kibana 빌드 스크립트 (`buildKibana.sh`)](#kibana-빌드-스크립트-buildkibanash)
+    - [📗 2. ELK Stack 구축](#-2-elk-stack-구축)
+      - [► 1. Elastic Stack 배포](#-1-elastic-stack-배포)
+        - [Elastic Stack Docker Compose (`docker-compose.dev.yml`)](#elastic-stack-docker-compose-docker-composedevyml)
+        - [Elastic Stack 배포 스크립트 (`deployStack.sh`)](#elastic-stack-배포-스크립트-deploystacksh)
+        - [Elastic Stack 상태 정보 확인 (`getHealth.sh`)](#elastic-stack-상태-정보-확인-gethealthsh)
+        - [Elasticsearch 접속 확인](#elasticsearch-접속-확인)
+        - [Elastic Stack 중지 스크립트 (`removeStack.sh`)](#elastic-stack-중지-스크립트-removestacksh)
+        - [Elastic Stack 단일 서비스 재기동](#elastic-stack-단일-서비스-재기동)
+      - [► 2. Beats 일괄배포/중지](#-2-beats-일괄배포중지)
+        - [Beats 일괄배포 스크립트 (`deployBeats.sh`)](#beats-일괄배포-스크립트-deploybeatssh)
+        - [Beats 일괄중지 스크립트 (`removeBeats.sh`)](#beats-일괄중지-스크립트-removebeatssh)
+      - [► 3. Filebeat 배포 (Beats 스크립트에 포함되서 설치됨)](#-3-filebeat-배포-beats-스크립트에-포함되서-설치됨)
+        - [Filebeat Docker Compose (`filebeat-docker-compose.yml`)](#filebeat-docker-compose-filebeat-docker-composeyml)
+        - [Filebeat 배포 스크립트 (`deployStackFilebeat.sh`)](#filebeat-배포-스크립트-deploystackfilebeatsh)
+      - [► 4. Metricbeat 배포 (Beats 스크립트에 포함되서 설치됨)](#-4-metricbeat-배포-beats-스크립트에-포함되서-설치됨)
+        - [Metricbeat Docker Compose (`metricbeat-docker-compose.yml`)](#metricbeat-docker-compose-metricbeat-docker-composeyml)
+        - [Metricbeat 배포 스크립트 (`deployStackMetricbeat.sh`)](#metricbeat-배포-스크립트-deploystackmetricbeatsh)
+      - [► 5. Packetbeat 배포 (Beats 스크립트에 포함되서 설치됨)](#-5-packetbeat-배포-beats-스크립트에-포함되서-설치됨)
+        - [Packetbeat Docker Compose (`packetbeat-docker-compose.yml`)](#packetbeat-docker-compose-packetbeat-docker-composeyml)
+        - [Packetbeat 배포 스크립트 (`deployStackPacketbeat.sh`)](#packetbeat-배포-스크립트-deploystackpacketbeatsh)
+      - [► 6. Heartbeat 배포 (Beats 스크립트에 포함되서 설치됨)](#-6-heartbeat-배포-beats-스크립트에-포함되서-설치됨)
+        - [Heartbeat Docker Compose (`heartbeat-docker-compose.yml`)](#heartbeat-docker-compose-heartbeat-docker-composeyml)
+        - [Heartbeat 배포 스크립트 (`deployStackHeartbeat.sh`)](#heartbeat-배포-스크립트-deploystackheartbeatsh)
+      - [🚫 7. Auditbeat 배포 (사용안함)](#-7-auditbeat-배포-사용안함)
+  - [📌 추가 모니터링 툴](#-추가-모니터링-툴)
+      - [► 1. ADD CLUSTER 클릭](#-1-add-cluster-클릭)
+      - [► 2. ELK URL PORT 입력](#-2-elk-url-port-입력)
+      - [► 3. 모니터링 화면](#-3-모니터링-화면)
+  - [🚦 Kibana Management](#-kibana-management)
+    - [📌 Stack Management (Index 용량 및 정책 관리)](#-stack-management-index-용량-및-정책-관리)
+      - [► Index Policy 정책 설정](#-index-policy-정책-설정)
+    - [📌 Stack Monitoring (Elasticsearch 모니터링 및 각종 지표 확인)](#-stack-monitoring-elasticsearch-모니터링-및-각종-지표-확인)
+      - [► Elasticsearch 모니터링](#-elasticsearch-모니터링)
+        - [Elasticsearch Overview](#elasticsearch-overview)
+        - [Elasticsearch Node](#elasticsearch-node)
 <!-- TOC -->
   
 
@@ -105,7 +132,6 @@
     <td>-</td>
   </tr>
 </table>
-
 
 
 
@@ -215,7 +241,7 @@ es2
 
 
 
-#### ► 1. 추가 볼륨 마운트
+#### ► 1. 추가 볼륨 마운트 (`volume-mount.sh`)
 
 [volume-mount.sh](scripts/server-init/volume-mount.sh) 스크립트 파일 참고
 
@@ -231,7 +257,7 @@ $ ./volume-mount.sh
 
 
 
-#### ► 2. host 설정
+#### ► 2. host 설정 (`set-host.sh`)
 
 [set-host.sh](scripts/server-init/set-host.sh) 스크립트 파일 참고
 
@@ -242,17 +268,17 @@ $ ./volume-mount.sh
 ```bash
 $ cd ~/scripts/server-init
 # master 설정 예시
-$ ./set-host.sh master 172.31.8.1 172.31.8.2 172.31.8.3
+$ ./set-host.sh master 10.10.0.1 10.10.0.2 10.10.0.3
 # cluster1 설정 예시
-$ ./set-host.sh cluster1 172.31.8.1 172.31.8.2 172.31.8.3
+$ ./set-host.sh cluster1 10.10.0.1 10.10.0.2 10.10.0.3
 # cluster2 설정 예시
-$ ./set-host.sh cluster2 172.31.8.1 172.31.8.2 172.31.8.3
+$ ./set-host.sh cluster2 10.10.0.1 10.10.0.2 10.10.0.3
 ```
 
 
 
 
-#### ► 3. BitBucket SSH 키 생성 및 등록
+#### ► 3. BitBucket SSH 키 생성 및 등록 (`set-sshkey.sh`)
 
 본 예제는 **BitBucket** 으로 진행했으므로 **BitBucket** 사용을 기준으로 설명한다
 
@@ -276,7 +302,7 @@ ssh-ed25519 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
 
 
-#### 🚫️ 4. AWS 키를 `.zshrc`에 등록 (EC2 IAM Role 설정X)
+#### 🚫️ 4. AWS 키를 `.zshrc`에 등록 (EC2 IAM Role 설정X) (`set-awskey.sh`)
 
 ~~**EC2 IAM Role**로 권한을 주면 보안에 취약한 **AWS KEY**를 생성/사용할 필요가 없음~~
 
@@ -332,56 +358,24 @@ $ git clone https://github.com/freelife1191/docker-elastic.git
 ### 📘 2. Docker Swarm 초기 구축 환경 설정
 
 
+
+
 #### ► 1. 초기 설정 스크립트 수행
 - `init.sh` 여기서는 이 스크립트만 수행하면 됨
   - `env.sh` 에는 해당 서버에 설정에 필요한 각종 변수들을 보관하고 있으니 참고만 하면 됨
   - `preload.sh` 는 `init.sh` 를 수행하면 사전 처리되는 스크립트
 
+##### 환경변수 스크립트 (`env.sh`)
+
 - [env.sh](env.sh)
+
+##### 사전 실행 스크립트 (`preload.sh`)
+
 - [preload.sh](scripts/preload.sh)
+
+##### 초기 셋팅 스크립트 (`init.sh`)
+
 - [init.sh](scripts/init.sh)
-
-
-#### ► 2. AWS CLI를 설치하고 ECR Login을 테스트
-
-AWS 인스턴스에서 **Elastic Container Registry** 서비스의 **Private Repository**를 사용하기 위해서는 **ECR Login** 처리가 필요한데  
-한번 로그인 시 12시간이 유지되므로 주기적으로 **ECR Login** 처리를 해주어 Login 상태를 유지해줘야함
-
-[ecr-login.sh](scripts/ecr-login.sh) 스크립트 파일 참고
-
-
-#### ► 3. Docker Swarm 초기 설정
-
-master 노드에서만 실행한다
-
-```shell
-$ ./docker-swarm-init.sh
-```
-
-[docker-swarm-init.sh](scripts/docker-swarm-init.sh) 스크립트 파일 참고
-
-
-#### ► 4. 1분마다 동작하는 Cronjob 등록
-
-해당 스크립트의 상단에 있는 스크립트를 설정에 맞게 복사해서 crontab 에 붙여 넣으면됨
-
-```bash
-# crontab 편집기 모드 열기
-$ crontab -e
-
-# 1분마다 cron-start.sh 실행
-*/1 * * * * sudo -u ubuntu /home/ubuntu/docker-elastic/scripts/cron-start.sh 2>&1 | tee /home/ubuntu/docker-elastic/crontab.log
-```
-
-[cron-start.sh](scripts/cron-start.sh) 스크립트 파일 참고
-
-
-docker swarm 활성화 확인
-
-```bash
-$ docker info | grep Swarm
-Swarm: inactive
-```
 
 
 **내부통신 방화벽 추가**
@@ -400,7 +394,7 @@ Swarm: inactive
 > 초기 환경 변수는 `init.sh` 스크립트에서 `env-template.sh` 파일을 참고하여 `env.sh`를 생성 설정  
 수정할 부분이 있다면 스크립트 파일의 환경변수를 수정
 
-```bash
+```shell
 $ cd scripts
 
 # 개발환경 초기 셋팅 예시 운영환경 초기 셋팅은 Argument로 'prod' 를 입력
@@ -410,6 +404,7 @@ $ ./init.sh
 SET OK
 HOME=/home/ubuntu/docker-elastic
 PROFILE=dev
+UID=1000
 ELASTIC_VERSION=7.10.2
 ELASTICSEARCH_USERNAME=elastic
 ELASTICSEARCH_PASSWORD=elastic
@@ -423,14 +418,76 @@ INITIAL_MASTER_NODES=master
 ELASTICSEARCH_JVM_MEMORY=1g
 ELASTICSEARCH_UPDATE_DELAY=60s
 AWS_ECR_PRIVATE_DOMAIN=3XXXXXXXXXXX.dkr.ecr.ap-northeast-2.amazonaws.com
+```
 
+
+
+
+#### ► 2. AWS CLI를 설치하고 ECR Login을 테스트
+
+AWS 인스턴스에서 **Elastic Container Registry** 서비스의 **Private Repository**를 사용하기 위해서는 **ECR Login** 처리가 필요한데  
+한번 로그인 시 12시간이 유지되므로 주기적으로 **ECR Login** 처리를 해주어 Login 상태를 유지해줘야함
+
+##### ECR 로그인 스크립트 (`ecr-login.sh`)
+
+[ecr-login.sh](scripts/ecr-login.sh) 스크립트 파일 참고
+
+
+
+
+#### ► 3. 1분마다 동작하는 Cronjob 등록
+
+해당 스크립트의 상단에 있는 스크립트를 설정에 맞게 복사해서 crontab 에 붙여 넣으면됨
+
+```bash
+# crontab 편집기 모드 열기
+$ crontab -e
+
+# 1분마다 cron-start.sh 실행
+*/1 * * * * sudo -u ubuntu /home/ubuntu/docker-elastic/scripts/cron-start.sh 2>&1 | tee /home/ubuntu/docker-elastic/crontab.log
+```
+
+##### 크론잡 실행 스크립트 (`cron-start.sh`)
+
+아래의 **CronJob** 들을 수행
+
+- [ECR 로그인](scripts/ecr-login.sh)
+- Kibana ECR 이미지 Pull
+- Elasticsearch ECR 이미지 Pull
+- ELK 스크립트 Repository Git Pull
+
+[cron-start.sh](scripts/cron-start.sh) 스크립트 파일 참고
+
+
+
+
+#### ► 4. Docker Swarm 초기 설정 (`docker-swarm-init.sh`)
+
+docker swarm 활성화 확인
+
+```bash
+$ docker info | grep Swarm
+Swarm: inactive
+```
+
+
+master 노드에서만 실행한다 (worker 노드들은 Join 되면 자동으로 전파됨)
+
+```shell
+$ ./docker-swarm-init.sh
+```
+
+[docker-swarm-init.sh](scripts/docker-swarm-init.sh) 스크립트 파일 참고
+
+
+```shell
 Swarm initialized: current node (yky9nyzqwe82vc1ofu4grnbyz) is now a manager.
 
 To add a worker to this swarm, run the following command:
 
     # 각 워커 노드에서 아래의 명령어로 하나의 클러스터로 합류 시킬 수 있음
     # 아래의 스크립트를 복사해서 master 를 제외한 각 worker 노드 서버에서 실행시켜 준다
-    docker swarm join --token SWMTKN-1-36c3nveukaxto9rhcl1kiul71t18kowritmr4534q7h3qbwvmy-aydkxf0l89w70hh4s6ylrxwk9 172.31.5.236:2377
+    docker swarm join --token SWMTKN-1-36c3nveukaxto9rhcl1kiul71t18kowritmr4534q7h3qbwvmy-aydkxf0l89w70hh4s6ylrxwk9 10.10.0.1:2377
 
 To add a manager to this swarm, run 'docker swarm join-token manager' and follow the instructions.
 ```
@@ -508,8 +565,15 @@ https://swarmpit.io
 
 > 한가지 단점이 있다면 Swarmpit Timezone 설정을 변경할 수 없어서 UTC 기준으로 볼 수 밖에 없다
 
-[deployStackSwarmpit.sh](deployStackSwarmpit.sh) 스크립트 참고
+
+##### Swarmpit Docker Compose (`swarmpit-docker-compose.yml`)
+
 [swarmpit-docker-compose.yml](swarmpit-docker-compose.yml) docker compose 설정 참고
+
+
+##### Swarmpit 배포 스크립트 (`deployStackSwarmpit.sh`)
+
+[deployStackSwarmpit.sh](deployStackSwarmpit.sh) 스크립트 참고
 
 ```bash
 $ ./deployStackSwarmpit.sh
@@ -520,6 +584,9 @@ $ ./deployStackSwarmpit.sh
 ```bash
 $ docker stack ps --no-trunc swarmpit
 ```
+
+
+
 
 ## 🚦 ELK Configuration
 
@@ -538,8 +605,13 @@ $ docker stack ps --no-trunc swarmpit
 
 스크립트 파일 참고
 
-- [elk/elasticsearch/Dockerfile](elk/elasticsearch/Dockerfile)
-- [buildElastic.sh](scripts/buildElastic.sh)
+##### Elasticsearch (`Dockerfile`)
+
+[elk/elasticsearch/Dockerfile](elk/elasticsearch/Dockerfile)
+
+##### Elasticsearch 빌드 스크립트 (`buildElastic.sh`)
+
+[buildElastic.sh](scripts/buildElastic.sh)
 
 ```bash
 $ cd scripts
@@ -551,10 +623,15 @@ $ ./buildElastic.sh
 
 #### ► 2. Kibana 이미지 빌드 (최초에만 생성 이미 생성되어 있음)
 
-스크립트 파일 참고
 
-- [elk/kibana/Dockerfile](elk/kibana/Dockerfile)
-- [buildKibana.sh](scripts/buildKibana.sh)
+##### Kibana (`Dockerfile`)
+
+[elk/kibana/Dockerfile](elk/kibana/Dockerfile) 스크립트 파일 참고
+
+
+##### Kibana 빌드 스크립트 (`buildKibana.sh`)
+
+[buildKibana.sh](scripts/buildKibana.sh) 스크립트 파일 참고
 
 ```bash
 $ cd scripts
@@ -569,8 +646,14 @@ $ ./buildKibana.sh
 
 #### ► 1. Elastic Stack 배포
 
-- [docker-compose.yml](docker-compose.dev.yml) 스크립트 파일 참고
-- [deployStack.sh](deployStack.sh) 스크립트 파일 참고
+##### Elastic Stack Docker Compose (`docker-compose.dev.yml`)
+
+[docker-compose.dev.yml](docker-compose.dev.yml) 스크립트 파일 참고
+
+
+##### Elastic Stack 배포 스크립트 (`deployStack.sh`)
+
+[deployStack.sh](deployStack.sh) 스크립트 파일 참고
 
 **elastic stack 배포**
 - `elasticsearch`
@@ -596,7 +679,8 @@ $ ./docker stack services elastic
 $ ./docker stack ps --no-trunc elastic
 ```
 
-배포 상태 정보 확인  
+##### Elastic Stack 상태 정보 확인 (`getHealth.sh`)
+
 [getHealth.sh](getHealth.sh) 스크립트 파일 참고
 
 ```bash
@@ -623,7 +707,9 @@ green  open   apm-7.10.2-error-000001          -JSbO-hPQZioO9HwgSDINA   1   0   
 ```
 
 
-접속 확인 http://PUBLIC_IP:9200
+##### Elasticsearch 접속 확인 
+
+http://PUBLIC_IP:9200
 
 ```json
 {
@@ -645,7 +731,7 @@ green  open   apm-7.10.2-error-000001          -JSbO-hPQZioO9HwgSDINA   1   0   
 }
 ```
 
-ELK Stack 중지
+##### Elastic Stack 중지 스크립트 (`removeStack.sh`)
 
 - [removeStack.sh](removeStack.sh) 스크립트 파일 참고
 
@@ -653,7 +739,8 @@ ELK Stack 중지
 $ ./removeStack.sh
 ```
 
-ELK Stack 단일 서비스 재기동
+
+##### Elastic Stack 단일 서비스 재기동
 
 ```bash
 $ docker service update --force --with-registry-auth stack_service_name
@@ -670,14 +757,21 @@ $ docker service update --force --with-registry-auth elastic_kibana
 
 #### ► 2. Beats 일괄배포/중지
 
-- [deployBeats.sh](deployBeats.sh) Beats 일괄배포
-- [removeBeats.sh](removeBeats.sh) Beats 일괄중지
+
+##### Beats 일괄배포 스크립트 (`deployBeats.sh`)
+
+[deployBeats.sh](deployBeats.sh) Beats 일괄배포
 
 Beats 일괄배포
 
 ```bash
 $ ./deployBeats.sh
 ```
+
+
+##### Beats 일괄중지 스크립트 (`removeBeats.sh`)
+
+[removeBeats.sh](removeBeats.sh) Beats 일괄중지
 
 Beats 일괄중지
 
@@ -692,8 +786,15 @@ $ ./removeBeats.sh
 
 https://www.elastic.co/kr/beats/filebeat
 
-- [filebeat-docker-compose.yml](filebeat-docker-compose.yml) 스크립트 파일 참고
-- [deployStackFilebeat.sh](deployStackFilebeat.sh) filebeat stack 배포
+
+##### Filebeat Docker Compose (`filebeat-docker-compose.yml`)
+
+[filebeat-docker-compose.yml](filebeat-docker-compose.yml) 스크립트 파일 참고
+
+
+##### Filebeat 배포 스크립트 (`deployStackFilebeat.sh`)
+
+[deployStackFilebeat.sh](deployStackFilebeat.sh) filebeat stack 배포
 
 ```bash
 $ ./deployStackFilebeat.sh
@@ -712,8 +813,16 @@ $ docker stack rm filebeat
 
 https://www.elastic.co/kr/beats/metricbeat
 
-- [metricbeat-docker-compose.yml](metricbeat-docker-compose.yml) 스크립트 파일 참고
-- [deployStackMetricbeat.sh](deployStackMetricbeat.sh) metricbeat stack 배포
+
+
+##### Metricbeat Docker Compose (`metricbeat-docker-compose.yml`)
+
+[metricbeat-docker-compose.yml](metricbeat-docker-compose.yml) 스크립트 파일 참고
+
+
+##### Metricbeat 배포 스크립트 (`deployStackMetricbeat.sh`)
+
+[deployStackMetricbeat.sh](deployStackMetricbeat.sh) metricbeat stack 배포
 
 ```bash
 $ ./deployStackMetricbeat.sh
@@ -732,8 +841,15 @@ $ docker stack rm metricbeat
 
 https://www.elastic.co/kr/beats/packetbeat
 
-- [packetbeat-docker-compose.yml](packetbeat-docker-compose.yml) 스크립트 파일 참고
-- [deployStackPacketbeat.sh](deployStackPacketbeat.sh) packetbeat stack 배포
+
+##### Packetbeat Docker Compose (`packetbeat-docker-compose.yml`)
+
+[packetbeat-docker-compose.yml](packetbeat-docker-compose.yml) 스크립트 파일 참고
+
+
+##### Packetbeat 배포 스크립트 (`deployStackPacketbeat.sh`)
+
+[deployStackPacketbeat.sh](deployStackPacketbeat.sh) packetbeat stack 배포
 
 ```bash
 $ ./deployStackPacketbeat.sh
@@ -752,8 +868,16 @@ $ docker stack rm packetbeat
 
 https://www.elastic.co/kr/beats/heartbeat
 
-- [heartbeat-docker-compose.yml](heartbeat-docker-compose.yml) 스크립트 파일 참고
-- [deployStackHeartbeat.sh](deployStackHeartbeat.sh) heartbeat stack 배포
+
+
+##### Heartbeat Docker Compose (`heartbeat-docker-compose.yml`)
+
+[heartbeat-docker-compose.yml](heartbeat-docker-compose.yml) 스크립트 파일 참고
+
+
+##### Heartbeat 배포 스크립트 (`deployStackHeartbeat.sh`)
+
+[deployStackHeartbeat.sh](deployStackHeartbeat.sh) heartbeat stack 배포
 
 ```bash
 $ ./deployStackHeartbeat.sh
@@ -768,7 +892,7 @@ $ docker stack rm heartbeat
 
 
 
-#### ► 7. Auditbeat 배포 (사용안함)
+#### 🚫 7. Auditbeat 배포 (사용안함)
 
 **Auditbeat**는 `pid` 설정 문제로 **Docker Swarm**으로 구동하기 힘들고 각각 서버에서 단독으로 구성해줘야 됨
 
