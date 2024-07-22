@@ -49,7 +49,9 @@
       - [► 5. sysctl 설정 확인](#-5-sysctl-설정-확인)
   - [🚦 Docker Swarm Configuration](#-docker-swarm-configuration)
     - [📘 1. ELK 구성 스크립트 Git Clone](#-1-elk-구성-스크립트-git-clone)
-    - [📘 2. Docker Swarm 초기 구축 환경 설정](#-2-docker-swarm-초기-구축-환경-설정)
+    - [📘 2. ECR Login](#-2-ecr-login)
+      - [► 1. AWS ACCESS KEY 없이 ECR Login을 처리하기 위해 EC2에 IAM Role(`aws-ecr-ec2-role`) 생성](#-1-aws-access-key-없이-ecr-login을-처리하기-위해-ec2에-iam-roleaws-ecr-ec2-role-생성)
+    - [📘 3. Docker Swarm 초기 구축 환경 설정](#-3-docker-swarm-초기-구축-환경-설정)
       - [► 1. 초기 설정 스크립트 수행](#-1-초기-설정-스크립트-수행)
         - [환경변수 스크립트 (`env.sh`)](#환경변수-스크립트-envsh)
         - [사전 실행 스크립트 (`preload.sh`)](#사전-실행-스크립트-preloadsh)
@@ -59,7 +61,7 @@
       - [► 3. 1분마다 동작하는 Cronjob 등록](#-3-1분마다-동작하는-cronjob-등록)
         - [크론잡 실행 스크립트 (`cron-start.sh`)](#크론잡-실행-스크립트-cron-startsh)
       - [► 4. Docker Swarm 초기 설정 (`docker-swarm-init.sh`)](#-4-docker-swarm-초기-설정-docker-swarm-initsh)
-    - [📘 3. Swarmpit 설치](#-3-swarmpit-설치)
+    - [📘 4. Swarmpit 설치](#-4-swarmpit-설치)
         - [Swarmpit Docker Compose (`swarmpit-docker-compose.yml`)](#swarmpit-docker-compose-swarmpit-docker-composeyml)
         - [Swarmpit 배포 스크립트 (`deployStackSwarmpit.sh`)](#swarmpit-배포-스크립트-deploystackswarmpitsh)
   - [🚦 ELK Configuration](#-elk-configuration)
@@ -259,7 +261,7 @@ $ ./volume-mount.sh
 - 변경시 `cat /etc/hostname` 변경됨 확인
 
 ```bash
-$ cd ~/scripts/server-init
+$ cd ~/scripts
 # master 설정 예시
 $ ./set-host.sh master 10.10.0.1 10.10.0.2 10.10.0.3
 # cluster1 설정 예시
@@ -285,7 +287,7 @@ $ ./set-host.sh cluster2 10.10.0.1 10.10.0.2 10.10.0.3
 ![bitbucket2](attachments/bitbucket2.png)
 
 ```bash
-$ cd ~/scripts/server-init
+$ cd ~/scripts
 $ ./set-sshkey.sh
 
 >> cat ~/.ssh/id_ed25519.pub
@@ -348,9 +350,30 @@ $ git clone https://github.com/freelife1191/docker-elastic.git
 ```
 
 
-### 📘 2. Docker Swarm 초기 구축 환경 설정
 
 
+### 📘 2. ECR Login
+
+AWS 인스턴스에서 **Elastic Container Registry** 서비스의 **Private Repository**를 사용하기 위해서는 **ECR Login** 처리가 필요한데  
+한번 로그인 시 12시간이 유지되므로 주기적으로 **ECR Login** 처리를 해주어 Login 상태를 유지해줘야함
+
+
+
+
+#### ► 1. AWS ACCESS KEY 없이 ECR Login을 처리하기 위해 EC2에 IAM Role(`aws-ecr-ec2-role`) 생성
+
+서비스는 `EC2`로 선택하고 정책은 `EC2InstanceProfileForImageBuilderECRContainerBuilds`을 선택해서 IAM Role을 생성
+
+![인스턴스 ECR 설정1](attachments/ecr1.png)
+
+생성한 **IAM Role**(`aws-ecr-ec2-role`)을 EC2에 연결
+
+![인스턴스 ECR 설정2](attachments/ecr2.png)
+
+
+
+
+### 📘 3. Docker Swarm 초기 구축 환경 설정
 
 
 #### ► 1. 초기 설정 스크립트 수행
@@ -493,7 +516,7 @@ To add a worker to this swarm, run the following command:
 To add a manager to this swarm, run 'docker swarm join-token manager' and follow the instructions.
 ```
 
-`init.sh` 스크립트를 수행해서 생성된 `docker swarm join` 스크립트를 복사해서 각 노드 서버에서 실행시켜 주면 각 노드 서버가 **Docker Swarm** 의 **Worker** 노드로 합류된다 
+`init.sh` 스크립트를 수행해서 생성된 `docker swarm join` 스크립트를 복사해서 각 노드 서버에서 실행시켜 주면 각 노드 서버가 **Docker Swarm** 의 **Worker** 노드로 합류된다
 
 매니저 노드에서 작업자 노드의 연결을 확인
 
@@ -551,7 +574,7 @@ Swarm: active
 
 
 
-### 📘 3. Swarmpit 설치
+### 📘 4. Swarmpit 설치
 
 모든 **Stack** 설치시 `master` 노드에서만 진행하면 된다  
 
